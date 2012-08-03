@@ -35,6 +35,7 @@ import com.intellij.psi.util.PsiUtilCore;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.util.Function;
 import com.intellij.util.PsiNavigateUtil;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.asJava.JetLightClass;
 import org.jetbrains.jet.lang.descriptors.CallableMemberDescriptor;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
@@ -96,7 +97,7 @@ public class JetLineMarkerProvider implements LineMarkerProvider {
     };
 
     @Override
-    public LineMarkerInfo getLineMarkerInfo(final PsiElement element) {
+    public LineMarkerInfo getLineMarkerInfo(@NotNull final PsiElement element) {
         JetFile file = (JetFile)element.getContainingFile();
         if (file == null) return null;
 
@@ -228,7 +229,7 @@ public class JetLineMarkerProvider implements LineMarkerProvider {
     }
 
     @Override
-    public void collectSlowLineMarkers(List<PsiElement> elements, Collection<LineMarkerInfo> result) {
+    public void collectSlowLineMarkers(@NotNull List<PsiElement> elements, @NotNull Collection<LineMarkerInfo> result) {
         if (elements.isEmpty() || DumbService.getInstance(elements.get(0).getProject()).isDumb()) {
           return;
         }
