@@ -200,7 +200,8 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
 
         if (descriptor.getClassObjectDescriptor() != null) {
             int innerClassAccess = ACC_PUBLIC | ACC_FINAL | ACC_STATIC;
-            v.visitInnerClass(classAsmType.getInternalName() + JvmAbi.CLASS_OBJECT_SUFFIX, classAsmType.getInternalName(), JvmAbi.CLASS_OBJECT_CLASS_NAME,
+            v.visitInnerClass(classAsmType.getInternalName() + JvmAbi.CLASS_OBJECT_SUFFIX, classAsmType.getInternalName(),
+                              JvmAbi.CLASS_OBJECT_CLASS_NAME,
                               innerClassAccess);
         }
     }
@@ -330,8 +331,7 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
 
     @Override
     protected void generateSyntheticParts() {
-        generateFieldForObjectInstance();
-        generateFieldForClassObject();
+        generateFieldForSingleton();
 
         try {
             generatePrimaryConstructor();
@@ -352,80 +352,9 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
 
         generateEnumMethods();
 
-        generateFunctionsForDataClasses();
-
-        generateClosureFields(context.closure, v, state.getTypeMapper());
-    }
-
-    private void generateFunctionsForDataClasses() {
-        if (!JetStandardLibrary.isData(descriptor)) return;
-
         generateComponentFunctionsForDataClasses();
 
-        generateDataClassToStringMethod();
-        generateDataClassHashCodeMethod();
-        generateDataClassEqualsMethod();
-    }
-
-    private void generateDataClassEqualsMethod() {
-        // todo: this is fake implementation
-
-        final FunctionDescriptor functionDescriptor = bindingContext.get(BindingContext.DATA_CLASS_EQUALS_FUNCTION, descriptor);
-        assert functionDescriptor != null;
-
-        final JvmMethodSignature jvmSignature = typeMapper.mapToCallableMethod(functionDescriptor, false, OwnerKind.IMPLEMENTATION).getSignature();
-        final int flags = FunctionCodegen.getMethodAsmFlags(functionDescriptor, OwnerKind.IMPLEMENTATION);
-        final MethodVisitor mv =
-                v.getVisitor().visitMethod(flags, jvmSignature.getAsmMethod().getName(), jvmSignature.getAsmMethod().getDescriptor(),
-                            jvmSignature.getGenericsSignature(), null);
-        FunctionCodegen.genJetAnnotations(state, functionDescriptor, jvmSignature, null, mv);
-        mv.visitCode();
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitVarInsn(ALOAD, 1);
-        mv.visitMethodInsn(INVOKESPECIAL, superClassAsmType.getInternalName(), "equals", "(Ljava/lang/Object;)Z");
-        mv.visitInsn(IRETURN);
-        mv.visitMaxs(-1,-1);
-        mv.visitEnd();
-    }
-
-    private void generateDataClassHashCodeMethod() {
-        // todo: this is fake implementation
-
-        final FunctionDescriptor functionDescriptor = bindingContext.get(BindingContext.DATA_CLASS_HASH_CODE_FUNCTION, descriptor);
-        assert functionDescriptor != null;
-
-        final JvmMethodSignature jvmSignature = typeMapper.mapToCallableMethod(functionDescriptor, false, OwnerKind.IMPLEMENTATION).getSignature();
-        final int flags = FunctionCodegen.getMethodAsmFlags(functionDescriptor, OwnerKind.IMPLEMENTATION);
-        final MethodVisitor mv =
-                v.getVisitor().visitMethod(flags, jvmSignature.getAsmMethod().getName(), jvmSignature.getAsmMethod().getDescriptor(),
-                            jvmSignature.getGenericsSignature(), null);
-        FunctionCodegen.genJetAnnotations(state, functionDescriptor, jvmSignature, null, mv);
-        mv.visitCode();
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitMethodInsn(INVOKESPECIAL, superClassAsmType.getInternalName(), "hashCode", "()I");
-        mv.visitInsn(IRETURN);
-        mv.visitMaxs(-1,-1);
-        mv.visitEnd();
-    }
-
-    private void generateDataClassToStringMethod() {
-        // todo: this is fake implementation
-
-        final FunctionDescriptor functionDescriptor = bindingContext.get(BindingContext.DATA_CLASS_TO_STRING_FUNCTION, descriptor);
-        assert functionDescriptor != null;
-
-        final JvmMethodSignature jvmSignature = typeMapper.mapToCallableMethod(functionDescriptor, false, OwnerKind.IMPLEMENTATION).getSignature();
-        final int flags = FunctionCodegen.getMethodAsmFlags(functionDescriptor, OwnerKind.IMPLEMENTATION);
-        final MethodVisitor mv =
-                v.getVisitor().visitMethod(flags, jvmSignature.getAsmMethod().getName(), jvmSignature.getAsmMethod().getDescriptor(),
-                            jvmSignature.getGenericsSignature(), null);
-        FunctionCodegen.genJetAnnotations(state, functionDescriptor, jvmSignature, null, mv);
-        mv.visitCode();
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitMethodInsn(INVOKESPECIAL, superClassAsmType.getInternalName(), "toString", "()Ljava/lang/String;");
-        mv.visitInsn(ARETURN);
-        mv.visitMaxs(-1,-1);
-        mv.visitEnd();
+        generateClosureFields(context.closure, v, state.getTypeMapper());
     }
 
     private void generateComponentFunctionsForDataClasses() {
@@ -642,37 +571,15 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
         }
     }
 
-    private void generateFieldForObjectInstance() {
-        if (isNonLiteralObject(myClass)) {
-            Type type = typeMapper.mapType(descriptor);
-            v.newField(myClass, ACC_PUBLIC | ACC_STATIC | ACC_FINAL, "$instance", type.getDescriptor(), null, null);
+    private void generateFieldForSingleton() {
+        if (!(isNonLiteralObject(myClass) || descriptor.getKind() == ClassKind.CLASS_OBJECT)) return;
 
-            staticInitializerChunks.add(new CodeChunk() {
-                @Override
-                public void generate(InstructionAdapter v) {
-                    String name = jvmName();
-                    v.anew(Type.getObjectType(name));
-                    v.dup();
-                    v.invokespecial(name, "<init>", "()V");
-                    v.putstatic(name, "$instance",
-                                typeMapper.mapType(descriptor).getDescriptor());
-                }
-            });
-        }
-    }
-
-    private void generateFieldForClassObject() {
-        if (descriptor.getKind() != ClassKind.CLASS_OBJECT) return;
-
-        v.newField(myClass, ACC_PUBLIC | ACC_STATIC | ACC_FINAL , "$instance", classAsmType.getDescriptor(), null, null);
+        v.newField(myClass, ACC_PUBLIC | ACC_STATIC | ACC_FINAL, JvmAbi.INSTANCE_FIELD, classAsmType.getDescriptor(), null, null);
 
         staticInitializerChunks.add(new CodeChunk() {
             @Override
-            public void generate(InstructionAdapter v) {
-                v.anew(classAsmType);
-                v.dup();
-                v.invokespecial(classAsmType.getInternalName(), "<init>", "()V");
-                v.putstatic(typeMapper.mapType(descriptor).getInternalName(), "$instance", classAsmType.getDescriptor());
+            public void generate(InstructionAdapter iv) {
+                initSingletonField(myClass, classAsmType, v, iv);
             }
         });
     }
