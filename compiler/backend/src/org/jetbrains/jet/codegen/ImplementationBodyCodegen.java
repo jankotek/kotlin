@@ -352,9 +352,80 @@ public class ImplementationBodyCodegen extends ClassBodyCodegen {
 
         generateEnumMethods();
 
-        generateComponentFunctionsForDataClasses();
+        generateFunctionsForDataClasses();
 
         generateClosureFields(context.closure, v, state.getTypeMapper());
+    }
+
+    private void generateFunctionsForDataClasses() {
+        if (!JetStandardLibrary.isData(descriptor)) return;
+
+        generateComponentFunctionsForDataClasses();
+
+        generateDataClassToStringMethod();
+        generateDataClassHashCodeMethod();
+        generateDataClassEqualsMethod();
+    }
+
+    private void generateDataClassEqualsMethod() {
+        // todo: this is fake implementation
+
+        final FunctionDescriptor functionDescriptor = bindingContext.get(BindingContext.DATA_CLASS_EQUALS_FUNCTION, descriptor);
+        assert functionDescriptor != null;
+
+        final JvmMethodSignature jvmSignature = typeMapper.mapToCallableMethod(functionDescriptor, false, OwnerKind.IMPLEMENTATION).getSignature();
+        final int flags = FunctionCodegen.getMethodAsmFlags(functionDescriptor, OwnerKind.IMPLEMENTATION);
+        final MethodVisitor mv =
+                v.getVisitor().visitMethod(flags, jvmSignature.getAsmMethod().getName(), jvmSignature.getAsmMethod().getDescriptor(),
+                            jvmSignature.getGenericsSignature(), null);
+        FunctionCodegen.genJetAnnotations(state, functionDescriptor, jvmSignature, null, mv);
+        mv.visitCode();
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitVarInsn(ALOAD, 1);
+        mv.visitMethodInsn(INVOKESPECIAL, superClassAsmType.getInternalName(), "equals", "(Ljava/lang/Object;)Z");
+        mv.visitInsn(IRETURN);
+        mv.visitMaxs(-1,-1);
+        mv.visitEnd();
+    }
+
+    private void generateDataClassHashCodeMethod() {
+        // todo: this is fake implementation
+
+        final FunctionDescriptor functionDescriptor = bindingContext.get(BindingContext.DATA_CLASS_HASH_CODE_FUNCTION, descriptor);
+        assert functionDescriptor != null;
+
+        final JvmMethodSignature jvmSignature = typeMapper.mapToCallableMethod(functionDescriptor, false, OwnerKind.IMPLEMENTATION).getSignature();
+        final int flags = FunctionCodegen.getMethodAsmFlags(functionDescriptor, OwnerKind.IMPLEMENTATION);
+        final MethodVisitor mv =
+                v.getVisitor().visitMethod(flags, jvmSignature.getAsmMethod().getName(), jvmSignature.getAsmMethod().getDescriptor(),
+                            jvmSignature.getGenericsSignature(), null);
+        FunctionCodegen.genJetAnnotations(state, functionDescriptor, jvmSignature, null, mv);
+        mv.visitCode();
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitMethodInsn(INVOKESPECIAL, superClassAsmType.getInternalName(), "hashCode", "()I");
+        mv.visitInsn(IRETURN);
+        mv.visitMaxs(-1,-1);
+        mv.visitEnd();
+    }
+
+    private void generateDataClassToStringMethod() {
+        // todo: this is fake implementation
+
+        final FunctionDescriptor functionDescriptor = bindingContext.get(BindingContext.DATA_CLASS_TO_STRING_FUNCTION, descriptor);
+        assert functionDescriptor != null;
+
+        final JvmMethodSignature jvmSignature = typeMapper.mapToCallableMethod(functionDescriptor, false, OwnerKind.IMPLEMENTATION).getSignature();
+        final int flags = FunctionCodegen.getMethodAsmFlags(functionDescriptor, OwnerKind.IMPLEMENTATION);
+        final MethodVisitor mv =
+                v.getVisitor().visitMethod(flags, jvmSignature.getAsmMethod().getName(), jvmSignature.getAsmMethod().getDescriptor(),
+                            jvmSignature.getGenericsSignature(), null);
+        FunctionCodegen.genJetAnnotations(state, functionDescriptor, jvmSignature, null, mv);
+        mv.visitCode();
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitMethodInsn(INVOKESPECIAL, superClassAsmType.getInternalName(), "toString", "()Ljava/lang/String;");
+        mv.visitInsn(ARETURN);
+        mv.visitMaxs(-1,-1);
+        mv.visitEnd();
     }
 
     private void generateComponentFunctionsForDataClasses() {

@@ -90,7 +90,7 @@ public class DeclarationResolver {
         resolveConstructorHeaders();
         resolveAnnotationStubsOnClassesAndConstructors();
         resolveFunctionAndPropertyHeaders();
-        createComponentFunctionsForDataClasses();
+        createDataClassesFunctions();
         importsResolver.processMembersImports(rootScope);
         checkRedeclarationsInNamespaces();
         checkRedeclarationsInInnerClassNames();
@@ -218,18 +218,20 @@ public class DeclarationResolver {
         }
     }
 
-    private void createComponentFunctionsForDataClasses() {
+    private void createDataClassesFunctions() {
         for (Map.Entry<JetClass, MutableClassDescriptor> entry : context.getClasses().entrySet()) {
             JetClass jetClass = entry.getKey();
             MutableClassDescriptor classDescriptor = entry.getValue();
 
-            if (jetClass.hasPrimaryConstructor() && JetStandardLibrary.isData(classDescriptor)) {
-                createComponentFunctions(classDescriptor);
+            if (JetStandardLibrary.isData(classDescriptor)) {
+                createDataClassFunctions(classDescriptor);
             }
         }
     }
 
-    private void createComponentFunctions(MutableClassDescriptor classDescriptor) {
+    private void createDataClassFunctions(MutableClassDescriptor classDescriptor) {
+        final NamespaceLikeBuilder builder = classDescriptor.getBuilder();
+
         Set<ConstructorDescriptor> constructors = classDescriptor.getConstructors();
         assert constructors.size() == 1 : "Data class hasn't a single constructor: " + constructors.size();
         ConstructorDescriptor constructor = constructors.iterator().next();
@@ -244,10 +246,14 @@ public class DeclarationResolver {
                     SimpleFunctionDescriptor functionDescriptor =
                             DescriptorResolver.createComponentFunctionDescriptor(parameterIndex, property, parameter, classDescriptor, trace);
 
-                    classDescriptor.getBuilder().addFunctionDescriptor(functionDescriptor);
+                    builder.addFunctionDescriptor(functionDescriptor);
                 }
             }
         }
+
+        builder.addFunctionDescriptor(DescriptorResolver.createDataClassToStringFunctionDescriptor(classDescriptor, trace));
+        builder.addFunctionDescriptor(DescriptorResolver.createDataClassHashCodeFunctionDescriptor(classDescriptor, trace));
+        builder.addFunctionDescriptor(DescriptorResolver.createDataClassEqualsFunctionDescriptor(classDescriptor, trace));
     }
 
     private void processPrimaryConstructor(MutableClassDescriptor classDescriptor, JetClass klass) {

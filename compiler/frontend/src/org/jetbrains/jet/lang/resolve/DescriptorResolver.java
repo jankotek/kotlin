@@ -59,6 +59,10 @@ public class DescriptorResolver {
     public static final Name VALUE_OF_METHOD_NAME = Name.identifier("valueOf");
     public static final Name VALUES_METHOD_NAME = Name.identifier("values");
     public static final String COMPONENT_FUNCTION_NAME_PREFIX = "component";
+    public static final Name TO_STRING_NAME = Name.identifier("toString");
+    public static final Name HASH_CODE_NAME = Name.identifier("hashCode");
+    public static final Name EQUALS_NAME = Name.identifier("equals");
+    public static final Name OTHER_NAME = Name.identifier("other");
 
     @NotNull
     private TypeResolver typeResolver;
@@ -334,6 +338,94 @@ public class DescriptorResolver {
         );
 
         trace.record(BindingContext.DATA_CLASS_COMPONENT_FUNCTION, parameter, functionDescriptor);
+
+        return functionDescriptor;
+    }
+
+    @NotNull
+    public static SimpleFunctionDescriptor createDataClassToStringFunctionDescriptor(
+            @NotNull ClassDescriptor classDescriptor,
+            @NotNull BindingTrace trace
+    ) {
+        SimpleFunctionDescriptorImpl functionDescriptor = new SimpleFunctionDescriptorImpl(
+                classDescriptor,
+                Collections.<AnnotationDescriptor>emptyList(),
+                TO_STRING_NAME,
+                CallableMemberDescriptor.Kind.SYNTHESIZED
+        );
+
+        functionDescriptor.initialize(
+                null,
+                classDescriptor.getImplicitReceiver(),
+                Collections.<TypeParameterDescriptor>emptyList(),
+                Collections.<ValueParameterDescriptor>emptyList(),
+                JetStandardLibrary.getInstance().getStringType(),
+                Modality.OPEN,
+                Visibilities.PUBLIC,
+                true
+        );
+
+        trace.record(BindingContext.DATA_CLASS_TO_STRING_FUNCTION, classDescriptor, functionDescriptor);
+
+        return functionDescriptor;
+    }
+
+    @NotNull
+    public static SimpleFunctionDescriptor createDataClassHashCodeFunctionDescriptor(
+            @NotNull ClassDescriptor classDescriptor,
+            @NotNull BindingTrace trace
+    ) {
+        SimpleFunctionDescriptorImpl functionDescriptor = new SimpleFunctionDescriptorImpl(
+                classDescriptor,
+                Collections.<AnnotationDescriptor>emptyList(),
+                HASH_CODE_NAME,
+                CallableMemberDescriptor.Kind.SYNTHESIZED
+        );
+
+        functionDescriptor.initialize(
+                null,
+                classDescriptor.getImplicitReceiver(),
+                Collections.<TypeParameterDescriptor>emptyList(),
+                Collections.<ValueParameterDescriptor>emptyList(),
+                JetStandardLibrary.getInstance().getIntType(),
+                Modality.OPEN,
+                Visibilities.PUBLIC,
+                true
+        );
+
+        trace.record(BindingContext.DATA_CLASS_HASH_CODE_FUNCTION, classDescriptor, functionDescriptor);
+
+        return functionDescriptor;
+    }
+
+    @NotNull
+    public static SimpleFunctionDescriptor createDataClassEqualsFunctionDescriptor(
+            @NotNull ClassDescriptor classDescriptor,
+            @NotNull BindingTrace trace
+    ) {
+        SimpleFunctionDescriptorImpl functionDescriptor = new SimpleFunctionDescriptorImpl(
+                classDescriptor,
+                Collections.<AnnotationDescriptor>emptyList(),
+                EQUALS_NAME,
+                CallableMemberDescriptor.Kind.SYNTHESIZED
+        );
+
+        final ValueParameterDescriptorImpl parameterDescriptor =
+                new ValueParameterDescriptorImpl(functionDescriptor, 0, Collections.<AnnotationDescriptor>emptyList(), OTHER_NAME, false,
+                                                 JetStandardClasses.getNullableAnyType(), false, null);
+
+        functionDescriptor.initialize(
+                null,
+                classDescriptor.getImplicitReceiver(),
+                Collections.<TypeParameterDescriptor>emptyList(),
+                Arrays.<ValueParameterDescriptor>asList(parameterDescriptor),
+                JetStandardLibrary.getInstance().getBooleanType(),
+                Modality.OPEN,
+                Visibilities.PUBLIC,
+                true
+        );
+
+        trace.record(BindingContext.DATA_CLASS_EQUALS_FUNCTION, classDescriptor, functionDescriptor);
 
         return functionDescriptor;
     }

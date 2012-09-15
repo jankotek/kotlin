@@ -1,18 +1,18 @@
 /*
-* Copyright 2010-2012 JetBrains s.r.o.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright 2010-2012 JetBrains s.r.o.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package org.jetbrains.jet.lang.resolve.lazy;
 
@@ -153,6 +153,18 @@ public class LazyClassMemberScope extends AbstractLazyMemberScope<LazyClassDescr
     private void generateDataClassMethods(@NotNull Collection<FunctionDescriptor> result, @NotNull Name name) {
         if (!JetStandardLibrary.isData(thisDescriptor)) return;
 
+        final BindingTrace trace = resolveSession.getTrace();
+
+        if (name.equals(DescriptorResolver.TO_STRING_NAME)) {
+            result.add(DescriptorResolver.createDataClassToStringFunctionDescriptor(thisDescriptor, trace));
+        }
+        else if (name.equals(DescriptorResolver.HASH_CODE_NAME)) {
+            result.add(DescriptorResolver.createDataClassHashCodeFunctionDescriptor(thisDescriptor, trace));
+        }
+        else if (name.equals(DescriptorResolver.EQUALS_NAME)) {
+            result.add(DescriptorResolver.createDataClassEqualsFunctionDescriptor(thisDescriptor, trace));
+        }
+
         ConstructorDescriptor constructor = getPrimaryConstructor();
         if (constructor == null) return;
 
@@ -169,7 +181,7 @@ public class LazyClassMemberScope extends AbstractLazyMemberScope<LazyClassDescr
             if (name.equals(Name.identifier(DescriptorResolver.COMPONENT_FUNCTION_NAME_PREFIX + parameterIndex))) {
                 SimpleFunctionDescriptor functionDescriptor =
                         DescriptorResolver.createComponentFunctionDescriptor(parameterIndex, property,
-                                                                             parameter, thisDescriptor, resolveSession.getTrace());
+                                                                             parameter, thisDescriptor, trace);
                 result.add(functionDescriptor);
                 break;
             }
@@ -298,6 +310,10 @@ public class LazyClassMemberScope extends AbstractLazyMemberScope<LazyClassDescr
 
         ConstructorDescriptor constructor = getPrimaryConstructor();
         if (constructor == null) return;
+
+        getFunctions(DescriptorResolver.TO_STRING_NAME);
+        getFunctions(DescriptorResolver.HASH_CODE_NAME);
+        getFunctions(DescriptorResolver.EQUALS_NAME);
 
         // Generate componentN functions until there's no such function for some n
         int n = 1;

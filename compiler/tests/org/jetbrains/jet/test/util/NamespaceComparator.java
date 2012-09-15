@@ -751,7 +751,8 @@ public class NamespaceComparator {
             for (DeclarationDescriptor member : memberScope.getAllDescriptors()) {
                 if (!conf.includeObject) {
                     if (member.getName().getName().matches("equals|hashCode|finalize|wait|notify(All)?|toString|clone|getClass")) {
-                        continue;
+                        if(((CallableMemberDescriptor)member).getKind() == CallableMemberDescriptor.Kind.FAKE_OVERRIDE)
+                            continue;
                     }
                 }
                 StringBuilder memberSb = new StringBuilder();

@@ -2,4 +2,7 @@ namespace test
 
 jet.data() internal final class test.DataClass : jet.Any {
     public final /*constructor*/ fun <init>(): test.DataClass
+    public open /*synthesized*/ fun equals(/*0*/ other: jet.Any?): jet.Boolean
+    public open /*synthesized*/ fun hashCode(): jet.Int
+    public open /*synthesized*/ fun toString(): jet.String
 }

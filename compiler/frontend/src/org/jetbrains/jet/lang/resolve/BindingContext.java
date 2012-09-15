@@ -228,6 +228,15 @@ public interface BindingContext {
     WritableSlice<ValueParameterDescriptor, FunctionDescriptor> DATA_CLASS_COMPONENT_FUNCTION =
             Slices.<ValueParameterDescriptor, FunctionDescriptor>sliceBuilder().build();
 
+    WritableSlice<ClassDescriptor, FunctionDescriptor> DATA_CLASS_TO_STRING_FUNCTION =
+            Slices.<ClassDescriptor, FunctionDescriptor>sliceBuilder().build();
+
+    WritableSlice<ClassDescriptor, FunctionDescriptor> DATA_CLASS_HASH_CODE_FUNCTION =
+            Slices.<ClassDescriptor, FunctionDescriptor>sliceBuilder().build();
+
+    WritableSlice<ClassDescriptor, FunctionDescriptor> DATA_CLASS_EQUALS_FUNCTION =
+            Slices.<ClassDescriptor, FunctionDescriptor>sliceBuilder().build();
+
     WritableSlice<FqName, ClassDescriptor> FQNAME_TO_CLASS_DESCRIPTOR = new BasicWritableSlice<FqName, ClassDescriptor>(DO_NOTHING, true);
     WritableSlice<FqName, NamespaceDescriptor> FQNAME_TO_NAMESPACE_DESCRIPTOR =
             new BasicWritableSlice<FqName, NamespaceDescriptor>(DO_NOTHING);
